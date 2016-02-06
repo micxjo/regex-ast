@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+import Data.Either (isLeft)
+
 import Test.Tasty
 import Test.Tasty.HUnit
 import Data.Text (Text)
@@ -13,6 +15,9 @@ it = testCase
 
 shouldParseTo :: Text -> Regex -> Assertion
 shouldParseTo text regex = parseRegex text @?= Right regex
+
+shouldNotParse :: Text -> Assertion
+shouldNotParse text = isLeft (parseRegex text) @?= True
 
 testParses :: [(Text, Regex)] -> Assertion
 testParses = mapM_ (uncurry shouldParseTo)
@@ -130,6 +135,27 @@ parseTests = describe "parseRegex"
                 ]
        , Concat [ Group (Literal "bar") Nothing
                 , EndLine]])
+    ]
+  , it "fails to parse bad regexes" $ mapM_ shouldNotParse
+    [ "?"
+    , "??"
+    , "?+"
+    , "+"
+    , "++"
+    , "+?"
+    , "("
+    , "(("
+    , "(()"
+    , "(foo"
+    , "(?P<name>"
+    , "(?P<>foo)"   -- empty group name not allowed
+    , ")"
+    , "))"
+    , "a)"
+    , "a|b)"
+    , "a{1,2,3}"
+    , "a{3.14}"
+    , "a{foo}"
     ]
   ]
 
