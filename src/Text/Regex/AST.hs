@@ -124,4 +124,4 @@ regexP :: Parser Regex
 regexP = alternateP <|> concatP <|> emptyP
 
 parseRegex :: Text -> Either String Regex
-parseRegex = parseOnly regexP
+parseRegex = parseOnly (regexP <* endOfInput)
