@@ -66,25 +66,28 @@ singleCharP = Literal . T.singleton <$> satisfy (inClass "a-zA-Z0-9")
 
 zeroOrOneP :: Parser Regex
 zeroOrOneP = do
-  sub <- singleCharP <|> anyCharP <|> groupP
+  sub <- perlClassP <|> singleCharP <|> anyCharP <|> groupP
   char '?'
   pure (ZeroOrOne sub)
 
 zeroOrMoreP :: Parser Regex
 zeroOrMoreP = do
-  sub <- singleCharP <|> anyCharP <|> groupP
+  sub <- perlClassP <|> singleCharP <|> anyCharP <|> groupP
   char '*'
   pure (ZeroOrMore sub)
 
 oneOrMoreP :: Parser Regex
 oneOrMoreP = do
-  sub <- singleCharP <|> anyCharP <|> groupP
+  sub <- perlClassP <|> singleCharP <|> anyCharP <|> groupP
   char '+'
   pure (OneOrMore sub)
 
+perlClassP :: Parser Regex
+perlClassP = Class <$> (char '\\' *> satisfy (inClass "dDsSwWhHvV"))
+
 repeatP :: Parser Regex
 repeatP = do
-  sub <- singleCharP <|> anyCharP <|> groupP
+  sub <- perlClassP <|> singleCharP <|> anyCharP <|> groupP
   char '{'
   first <- decimal
   second <- option (Just first) (char ',' *> option Nothing (Just <$> decimal))
@@ -122,6 +125,7 @@ concatP = do
                           , oneOrMoreP
                           , repeatP
                           , anyCharP
+                          , perlClassP
                           , groupP
                           , literalP])
   case parts of

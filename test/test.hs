@@ -144,6 +144,13 @@ parseTests = describe "parseRegex"
        , Concat [ Group (Literal "bar") Nothing
                 , EndLine]])
     ]
+  , it "parses perl-style character classes" $ testParses
+    [ ("\\d", Class 'd')
+    , ("\\D", Class 'D')
+    , ("\\d\\s", Concat [Class 'd', Class 's'])
+    , ("\\d+", OneOrMore (Class 'd'))
+    , ("(\\d*)", Group (ZeroOrMore (Class 'd')) Nothing)
+    ]
   , it "fails to parse bad regexes" $ mapM_ shouldNotParse
     [ "?"
     , "??"
@@ -167,6 +174,9 @@ parseTests = describe "parseRegex"
     , "a{1,2,3}"
     , "a{3.14}"
     , "a{foo}"
+    , "\\"
+    , "\\\\"
+    , "\\x"
     ]
   ]
 
