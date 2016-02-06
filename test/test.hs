@@ -88,6 +88,17 @@ parseTests = describe "parseRegex"
     , ("(a|b)+", OneOrMore (Group (Alternate [Literal "a", Literal "b"])))
     , (".+", OneOrMore AnyChar)
     ]
+  , it "parses repeats" $ testParses
+    [ ("a{4,10}", Repeat (Literal "a") 4 (Just 10))
+    , ("a{4,}", Repeat (Literal "a") 4 Nothing)
+    , ("a{4}", Repeat (Literal "a") 4 (Just 4))
+    , ("a{4,3}b{0,10}", Concat [ Repeat (Literal "a") 4 (Just 3)
+                               , Repeat (Literal "b") 0 (Just 10)])
+    , ("(abc){0,}", Repeat (Group (Literal "abc")) 0 Nothing)
+    , ("(a|b){2,3}",
+       Repeat (Group (Alternate [Literal "a", Literal "b"])) 2 (Just 3))
+    , (".{3,3}", Repeat AnyChar 3 (Just 3))
+    ]
   ]
 
 tests :: TestTree

@@ -28,7 +28,7 @@ data Regex = Empty
            | Group Regex
            | ZeroOrOne Regex
            | OneOrMore Regex
-           | Repeat !Regex !Int !(Maybe Int)
+           | Repeat !Regex !Integer !(Maybe Integer)
            | Concat ![Regex]
            | Alternate ![Regex]
            deriving (Eq, Show)
@@ -71,6 +71,15 @@ oneOrMoreP = do
   char '+'
   pure (OneOrMore sub)
 
+repeatP :: Parser Regex
+repeatP = do
+  sub <- singleCharP <|> anyCharP <|> groupP
+  char '{'
+  first <- decimal
+  second <- option (Just first) (char ',' *> option Nothing (Just <$> decimal))
+  char '}'
+  pure (Repeat sub first second)
+
 alternateP :: Parser Regex
 alternateP = do
   first <- concatP <|> emptyP
@@ -87,7 +96,12 @@ groupP = do
 
 concatP :: Parser Regex
 concatP = do
-  parts <- many1' (choice [zeroOrOneP, oneOrMoreP, anyCharP, groupP, literalP])
+  parts <- many1' (choice [ zeroOrOneP
+                          , oneOrMoreP
+                          , repeatP
+                          , anyCharP
+                          , groupP
+                          , literalP])
   case parts of
     [part] -> pure part
     _ -> pure (Concat parts)
