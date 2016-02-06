@@ -28,6 +28,7 @@ data Regex = Empty
            | NotWordBoundary
            | Group Regex (Maybe GroupName)
            | ZeroOrOne Regex
+           | ZeroOrMore Regex
            | OneOrMore Regex
            | Repeat !Regex !Integer !(Maybe Integer)
            | Concat ![Regex]
@@ -68,6 +69,12 @@ zeroOrOneP = do
   sub <- singleCharP <|> anyCharP <|> groupP
   char '?'
   pure (ZeroOrOne sub)
+
+zeroOrMoreP :: Parser Regex
+zeroOrMoreP = do
+  sub <- singleCharP <|> anyCharP <|> groupP
+  char '*'
+  pure (ZeroOrMore sub)
 
 oneOrMoreP :: Parser Regex
 oneOrMoreP = do
@@ -111,6 +118,7 @@ concatP :: Parser Regex
 concatP = do
   parts <- many1' (choice [ anchorP
                           , zeroOrOneP
+                          , zeroOrMoreP
                           , oneOrMoreP
                           , repeatP
                           , anyCharP

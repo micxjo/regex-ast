@@ -103,6 +103,14 @@ parseTests = describe "parseRegex"
        ZeroOrOne (Group (Alternate [Literal "a", Literal "b"]) Nothing))
     , (".?", ZeroOrOne AnyChar)
     ]
+  , it "parses zero-or-more" $ testParses
+    [ ("a*", ZeroOrMore (Literal "a"))
+    , ("a*b*", Concat [ZeroOrMore (Literal "a"), ZeroOrMore (Literal "b")])
+    , ("(abc)*", ZeroOrMore (Group (Literal "abc") Nothing))
+    , ("(a|b)*",
+       ZeroOrMore (Group (Alternate [Literal "a", Literal "b"]) Nothing))
+    , (".*", ZeroOrMore AnyChar)
+    ]
   , it "parses one-or-more" $ testParses
     [ ("a+", OneOrMore (Literal "a"))
     , ("a+b+", Concat [OneOrMore (Literal "a"), OneOrMore (Literal "b")])
@@ -143,6 +151,9 @@ parseTests = describe "parseRegex"
     , "+"
     , "++"
     , "+?"
+    , "*"
+    , "**"
+    , "*?"
     , "("
     , "(("
     , "(()"
