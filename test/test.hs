@@ -99,6 +99,18 @@ parseTests = describe "parseRegex"
        Repeat (Group (Alternate [Literal "a", Literal "b"])) 2 (Just 3))
     , (".{3,3}", Repeat AnyChar 3 (Just 3))
     ]
+  , it "parses line boundaries" $ testParses
+    [ ("^", StartLine)
+    , ("$", EndLine)
+    , ("^$", Concat [StartLine, EndLine])
+    , ("^foo$", Concat [StartLine, Literal "foo", EndLine])
+    , ("^(foo$)|(bar)$", Alternate
+       [ Concat [ StartLine
+                , Group (Concat [ Literal "foo"
+                                , EndLine])]
+       , Concat [ Group (Literal "bar")
+                , EndLine]])
+    ]
   ]
 
 tests :: TestTree

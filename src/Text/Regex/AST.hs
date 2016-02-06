@@ -56,6 +56,9 @@ literalP = Literal . T.pack <$> many1 literalCharP
 anyCharP :: Parser Regex
 anyCharP = char '.' >> pure AnyChar
 
+anchorP :: Parser Regex
+anchorP = (char '^' >> pure StartLine) <|> (char '$' >> pure EndLine)
+
 singleCharP :: Parser Regex
 singleCharP = Literal . T.singleton <$> satisfy (inClass "a-zA-Z0-9")
 
@@ -96,7 +99,8 @@ groupP = do
 
 concatP :: Parser Regex
 concatP = do
-  parts <- many1' (choice [ zeroOrOneP
+  parts <- many1' (choice [ anchorP
+                          , zeroOrOneP
                           , oneOrMoreP
                           , repeatP
                           , anyCharP
