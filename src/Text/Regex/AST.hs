@@ -65,6 +65,12 @@ zeroOrOneP = do
   char '?'
   pure (ZeroOrOne sub)
 
+oneOrMoreP :: Parser Regex
+oneOrMoreP = do
+  sub <- singleCharP <|> anyCharP <|> groupP
+  char '+'
+  pure (OneOrMore sub)
+
 alternateP :: Parser Regex
 alternateP = do
   first <- concatP <|> emptyP
@@ -81,7 +87,7 @@ groupP = do
 
 concatP :: Parser Regex
 concatP = do
-  parts <- many1' (zeroOrOneP <|> anyCharP <|> groupP <|> literalP)
+  parts <- many1' (choice [zeroOrOneP, oneOrMoreP, anyCharP, groupP, literalP])
   case parts of
     [part] -> pure part
     _ -> pure (Concat parts)

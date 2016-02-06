@@ -81,6 +81,13 @@ parseTests = describe "parseRegex"
     , ("(a|b)?", ZeroOrOne (Group (Alternate [Literal "a", Literal "b"])))
     , (".?", ZeroOrOne AnyChar)
     ]
+  , it "parses one-or-more" $ testParses
+    [ ("a+", OneOrMore (Literal "a"))
+    , ("a+b+", Concat [OneOrMore (Literal "a"), OneOrMore (Literal "b")])
+    , ("(abc)+", OneOrMore (Group (Literal "abc")))
+    , ("(a|b)+", OneOrMore (Group (Alternate [Literal "a", Literal "b"])))
+    , (".+", OneOrMore AnyChar)
+    ]
   ]
 
 tests :: TestTree
