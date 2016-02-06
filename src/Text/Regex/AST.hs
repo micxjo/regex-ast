@@ -13,6 +13,7 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 
 type CharClass = Char
+type GroupName = Text
 
 data Regex = Empty
            | Literal !Text
@@ -25,7 +26,7 @@ data Regex = Empty
            | EndText
            | WordBoundary
            | NotWordBoundary
-           | Group Regex
+           | Group Regex (Maybe GroupName)
            | ZeroOrOne Regex
            | OneOrMore Regex
            | Repeat !Regex !Integer !(Maybe Integer)
@@ -90,12 +91,21 @@ alternateP = do
   rest <- sepBy1 (concatP <|> emptyP) (char '|')
   pure (Alternate (first : rest))
 
+groupNameP :: Parser GroupName
+groupNameP = do
+  string "?P<"
+  name <- takeTill ('>' ==)
+  guard (T.length name > 0)
+  char '>'
+  pure name
+
 groupP :: Parser Regex
 groupP = do
   char '('
+  name <- option Nothing (Just <$> groupNameP)
   sub <- regexP
   char ')'
-  pure (Group sub)
+  pure (Group sub name)
 
 concatP :: Parser Regex
 concatP = do

@@ -40,52 +40,70 @@ parseTests = describe "parseRegex"
     , ("||", Alternate [Empty, Empty, Empty])
     ]
   , it "parses basic groups" $ testParses
-    [ ("()", Group Empty)
-    , ("(f)", Group (Literal "f"))
-    , ("(foo)", Group (Literal "foo"))
-    , ("(foo|bar)", Group (Alternate [Literal "foo", Literal "bar"]))
-    , ("(foo|bar|123)", Group (Alternate
-                               [ Literal "foo"
-                               , Literal "bar"
-                               , Literal "123"]))
+    [ ("()", Group Empty Nothing)
+    , ("(f)", Group (Literal "f") Nothing)
+    , ("(foo)", Group (Literal "foo") Nothing)
+    , ("(foo|bar)", Group (Alternate [Literal "foo", Literal "bar"]) Nothing)
+    , ("(foo|bar|123)",
+       Group (Alternate
+              [ Literal "foo"
+              , Literal "bar"
+              , Literal "123"])
+       Nothing)
     , ("(foo|ba?r?|baz)",
        Group (Alternate
               [ Literal "foo"
               , Concat [ Literal "b"
                        , ZeroOrOne (Literal "a")
                        , ZeroOrOne (Literal "r")]
-              , Literal "baz"]))
+              , Literal "baz"])
+       Nothing)
     ]
   , it "parses concatenations of groups" $ testParses
-    [ ("()()", Concat [Group Empty, Group Empty])
-    , ("(abc)()", Concat [Group (Literal "abc"), Group Empty])
-    , ("()(abc)", Concat [Group Empty, Group (Literal "abc")])
-    , ("(foo)(bar)", Concat [Group (Literal "foo"), Group (Literal "bar")])
+    [ ("()()", Concat [Group Empty Nothing, Group Empty Nothing])
+    , ("(abc)()", Concat [Group (Literal "abc") Nothing, Group Empty Nothing])
+    , ("()(abc)", Concat [Group Empty Nothing, Group (Literal "abc") Nothing])
+    , ("(foo)(bar)", Concat [ Group (Literal "foo") Nothing
+                            , Group (Literal "bar") Nothing])
     ]
   , it "parses nested groups" $ testParses
-    [ ("(())", Group (Group Empty))
-    , ("((foo))", Group (Group (Literal "foo")))
-    , ("(foo(bar)baz)", Group (Concat
-                               [ Literal "foo"
-                               , Group (Literal "bar")
-                               , Literal "baz"]))
-    , ("(foo(bar)?baz)", Group (Concat
-                                [ Literal "foo"
-                                , ZeroOrOne (Group (Literal "bar"))
-                                , Literal "baz"]))
+    [ ("(())", Group (Group Empty Nothing) Nothing)
+    , ("((foo))", Group (Group (Literal "foo") Nothing) Nothing)
+    , ("(foo(bar)baz)",
+       Group (Concat
+              [ Literal "foo"
+              , Group (Literal "bar") Nothing
+              , Literal "baz"])
+       Nothing)
+    , ("(foo(bar)?baz)",
+       Group (Concat
+              [ Literal "foo"
+              , ZeroOrOne (Group (Literal "bar") Nothing)
+              , Literal "baz"])
+       Nothing)
+    ]
+  , it "parses named groups" $ testParses
+    [ ("(?P<foo>)", Group Empty (Just "foo"))
+    , ("(?P<foo>bar)", Group (Literal "bar") (Just "foo"))
+    , ("(?P<foo>bar)(?P<baz>quux)",
+       Concat [ Group (Literal "bar") (Just "foo")
+              , Group (Literal "quux") (Just "baz")])
+    , ("(?P<foo>())", Group (Group Empty Nothing) (Just "foo"))
     ]
   , it "parses zero-or-one" $ testParses
     [ ("a?", ZeroOrOne (Literal "a"))
     , ("a?b?", Concat [ZeroOrOne (Literal "a"), ZeroOrOne (Literal "b")])
-    , ("(abc)?", ZeroOrOne (Group (Literal "abc")))
-    , ("(a|b)?", ZeroOrOne (Group (Alternate [Literal "a", Literal "b"])))
+    , ("(abc)?", ZeroOrOne (Group (Literal "abc") Nothing))
+    , ("(a|b)?",
+       ZeroOrOne (Group (Alternate [Literal "a", Literal "b"]) Nothing))
     , (".?", ZeroOrOne AnyChar)
     ]
   , it "parses one-or-more" $ testParses
     [ ("a+", OneOrMore (Literal "a"))
     , ("a+b+", Concat [OneOrMore (Literal "a"), OneOrMore (Literal "b")])
-    , ("(abc)+", OneOrMore (Group (Literal "abc")))
-    , ("(a|b)+", OneOrMore (Group (Alternate [Literal "a", Literal "b"])))
+    , ("(abc)+", OneOrMore (Group (Literal "abc") Nothing))
+    , ("(a|b)+",
+       OneOrMore (Group (Alternate [Literal "a", Literal "b"]) Nothing))
     , (".+", OneOrMore AnyChar)
     ]
   , it "parses repeats" $ testParses
@@ -94,9 +112,9 @@ parseTests = describe "parseRegex"
     , ("a{4}", Repeat (Literal "a") 4 (Just 4))
     , ("a{4,3}b{0,10}", Concat [ Repeat (Literal "a") 4 (Just 3)
                                , Repeat (Literal "b") 0 (Just 10)])
-    , ("(abc){0,}", Repeat (Group (Literal "abc")) 0 Nothing)
+    , ("(abc){0,}", Repeat (Group (Literal "abc") Nothing) 0 Nothing)
     , ("(a|b){2,3}",
-       Repeat (Group (Alternate [Literal "a", Literal "b"])) 2 (Just 3))
+       Repeat (Group (Alternate [Literal "a", Literal "b"]) Nothing) 2 (Just 3))
     , (".{3,3}", Repeat AnyChar 3 (Just 3))
     ]
   , it "parses line boundaries" $ testParses
@@ -107,8 +125,10 @@ parseTests = describe "parseRegex"
     , ("^(foo$)|(bar)$", Alternate
        [ Concat [ StartLine
                 , Group (Concat [ Literal "foo"
-                                , EndLine])]
-       , Concat [ Group (Literal "bar")
+                                , EndLine])
+                  Nothing
+                ]
+       , Concat [ Group (Literal "bar") Nothing
                 , EndLine]])
     ]
   ]
