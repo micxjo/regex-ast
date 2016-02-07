@@ -52,15 +52,43 @@ instance Monoid Regex where
 emptyP :: Parser Regex
 emptyP = pure Empty
 
-literalCharP :: Parser Char
+notRepeater :: Maybe Char -> Bool
+notRepeater Nothing = True
+notRepeater (Just c) = not (inClass "?*+{" c)
+
+notSpecial :: Char -> Bool
+notSpecial = not . inClass "\\(){}[].*+?^$|"
+
+literalCharP :: Parser Builder
 literalCharP = do
-  c <- satisfy (inClass "a-zA-Z0-9")
+  c <- satisfy notSpecial
   next <- peekChar
-  guard (next /= Just '?' && next /= Just '+')
-  pure c
+  guard (notRepeater next)
+  pure (singleton c)
+
+isEscapeChar :: Char -> Bool
+isEscapeChar = inClass "\\aftnrv.*+?^$()[]{}|"
+
+escapeSeqP :: Parser Builder
+escapeSeqP = do
+  char '\\'
+  c <- satisfy isEscapeChar
+  next <- peekChar
+  guard (notRepeater next)
+  pure (singleton '\\' <> singleton c)
+
+escapeLiteralP :: Parser Regex
+escapeLiteralP = do
+  char '\\'
+  c <- satisfy isEscapeChar
+  pure (Literal (T.pack ['\\', c]))
+
+toStrictText :: Builder -> Text
+toStrictText = T.Lazy.toStrict . toLazyText
 
 literalP :: Parser Regex
-literalP = Literal . T.pack <$> many1 literalCharP
+literalP =
+  Literal . toStrictText . mconcat <$> many1 (escapeSeqP <|> literalCharP)
 
 anyCharP :: Parser Regex
 anyCharP = char '.' >> pure AnyChar
@@ -68,33 +96,37 @@ anyCharP = char '.' >> pure AnyChar
 anchorP :: Parser Regex
 anchorP = (char '^' >> pure StartLine) <|> (char '$' >> pure EndLine)
 
+perlClassP :: Parser Regex
+perlClassP = Class <$> (char '\\' *> satisfy (inClass "dDsSwWhHvV"))
+
 singleCharP :: Parser Regex
-singleCharP = Literal . T.singleton <$> satisfy (inClass "a-zA-Z0-9")
+singleCharP = Literal . T.singleton <$> satisfy notSpecial
+
+repeatUnit :: Parser Regex
+repeatUnit =
+  perlClassP <|> escapeLiteralP <|> singleCharP <|> anyCharP <|> groupP
 
 zeroOrOneP :: Parser Regex
 zeroOrOneP = do
-  sub <- perlClassP <|> singleCharP <|> anyCharP <|> groupP
+  sub <- repeatUnit
   char '?'
   pure (ZeroOrOne sub)
 
 zeroOrMoreP :: Parser Regex
 zeroOrMoreP = do
-  sub <- perlClassP <|> singleCharP <|> anyCharP <|> groupP
+  sub <- repeatUnit
   char '*'
   pure (ZeroOrMore sub)
 
 oneOrMoreP :: Parser Regex
 oneOrMoreP = do
-  sub <- perlClassP <|> singleCharP <|> anyCharP <|> groupP
+  sub <- repeatUnit
   char '+'
   pure (OneOrMore sub)
 
-perlClassP :: Parser Regex
-perlClassP = Class <$> (char '\\' *> satisfy (inClass "dDsSwWhHvV"))
-
 repeatP :: Parser Regex
 repeatP = do
-  sub <- perlClassP <|> singleCharP <|> anyCharP <|> groupP
+  sub <- repeatUnit
   char '{'
   first <- decimal
   second <- option (Just first) (char ',' *> option Nothing (Just <$> decimal))
@@ -176,4 +208,4 @@ builder (Alternate subs) =
   mconcat (intersperse (singleton '|') (map builder subs))
 
 toText :: Regex -> Text
-toText = T.Lazy.toStrict . toLazyText . builder
+toText = toStrictText .  builder

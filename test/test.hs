@@ -29,7 +29,12 @@ parseTests = describe "parseRegex"
   , it "parses basic literals" $ testParses
     [ ("a", Literal "a")
     , ("ab", Literal "ab")
-    , ("1FooBar23", Literal "1FooBar23")
+    , ("1Foo Bar 23", Literal "1Foo Bar 23")
+    , ("fóô ओゎ乗 ®", Literal "fóô ओゎ乗 ®")
+    ]
+  , it "parses escape sequences" $ testParses
+    [ ("\\n\\(\\?{3,2}", Concat [ Literal "\\n\\("
+                                , Repeat (Literal "\\?") 3 (Just 2)])
     ]
   , it "parses any-char" $ testParses
     [ (".", AnyChar)
@@ -121,6 +126,8 @@ parseTests = describe "parseRegex"
     ]
   , it "parses repeats" $ testParses
     [ ("a{4,10}", Repeat (Literal "a") 4 (Just 10))
+    , ("abc{4,10}", Concat [ Literal "ab"
+                           , Repeat (Literal "c") 4 (Just 10)])
     , ("a{4,}", Repeat (Literal "a") 4 Nothing)
     , ("a{4}", Repeat (Literal "a") 4 (Just 4))
     , ("a{4,3}b{0,10}", Concat [ Repeat (Literal "a") 4 (Just 3)
@@ -175,7 +182,6 @@ parseTests = describe "parseRegex"
     , "a{3.14}"
     , "a{foo}"
     , "\\"
-    , "\\\\"
     , "\\x"
     ]
   ]
