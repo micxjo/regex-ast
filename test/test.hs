@@ -180,8 +180,33 @@ parseTests = describe "parseRegex"
     ]
   ]
 
+toTextTests :: TestTree
+toTextTests = testGroup "toText"
+  [ testCase "round trips basic patterns" $
+    mapM_ (\t -> toText <$> parseRegex t @?= Right t)
+    [ ""
+    , "foo"
+    , "."
+    , "\\d"
+    , "^"
+    , "$"
+    , "^$"
+    , "^foo$"
+    , "(foo)"
+    , "foo|bar|123"
+    , "(foo|bar|123)(baz)"
+    , "abc?"
+    , "(blah)*"
+    , "(())+"
+    , "^|$"
+    , "(?P<a>(?P<bc>)){1,3}"
+    , ".{0}"
+    , "\\d{5,}"
+    ]
+  ]
+
 tests :: TestTree
-tests = testGroup "regex-ast tests" [parseTests]
+tests = testGroup "regex-ast tests" [parseTests, toTextTests]
 
 main :: IO ()
 main = defaultMain tests

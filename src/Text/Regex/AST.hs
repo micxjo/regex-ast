@@ -3,14 +3,21 @@
 module Text.Regex.AST
        ( Regex(..)
        , parseRegex
+       , toText
        ) where
 
 import           Control.Applicative ((<|>))
 import           Control.Monad (guard)
+import           Data.List (intersperse)
+import           Data.Monoid ((<>))
 
 import           Data.Attoparsec.Text hiding (take, takeWhile)
 import           Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as T.Lazy
+import           Data.Text.Lazy.Builder (Builder, singleton, fromText,
+                                         toLazyText)
+import qualified Data.Text.Lazy.Builder.Int as Builder.Int
 
 type CharClass = Char
 type GroupName = Text
@@ -137,3 +144,36 @@ regexP = alternateP <|> concatP <|> emptyP
 
 parseRegex :: Text -> Either String Regex
 parseRegex = parseOnly (regexP <* endOfInput)
+
+builder :: Regex -> Builder
+builder Empty = mempty
+builder (Literal t) = fromText t
+builder AnyChar = singleton '.'
+builder AnyCharNoNL = singleton '.'
+builder (Class c) = singleton '\\' <> singleton c
+builder StartLine = singleton '^'
+builder EndLine = singleton '$'
+builder StartText = fromText "\\A"
+builder EndText = fromText "\\z"
+builder WordBoundary = fromText "\\b"
+builder NotWordBoundary = fromText "\\B"
+builder (Group sub Nothing) =
+  singleton '(' <> builder sub <> singleton ')'
+builder (Group sub (Just n)) =
+  fromText "(?P<" <> fromText n <> singleton '>' <> builder sub <> singleton ')'
+builder (ZeroOrOne sub) = builder sub <> singleton '?'
+builder (ZeroOrMore sub) = builder sub <> singleton '*'
+builder (OneOrMore sub) = builder sub <> singleton '+'
+builder (Repeat sub lo Nothing) =
+  builder sub <> singleton '{' <> Builder.Int.decimal lo <> fromText ",}"
+builder (Repeat sub lo (Just hi))
+  | lo == hi = builder sub <> singleton '{' <> Builder.Int.decimal lo
+    <> singleton '}'
+  | otherwise = builder sub <> singleton '{' <> Builder.Int.decimal lo
+    <> singleton ',' <> Builder.Int.decimal hi <> singleton '}'
+builder (Concat subs) = mconcat (map builder subs)
+builder (Alternate subs) =
+  mconcat (intersperse (singleton '|') (map builder subs))
+
+toText :: Regex -> Text
+toText = T.Lazy.toStrict . toLazyText . builder
