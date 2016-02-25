@@ -6,6 +6,10 @@ resolver: lts-5.1
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
+- location:
+    git: https://github.com/micxjo/range-set.git
+    commit: c5dfd9e7f681bd32832fa836935cd7c9ab470f7b
+  extra-dep: true
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: []

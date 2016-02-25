@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Data.Either (isLeft)
+import           Data.Either (isLeft)
 
-import Test.Tasty
-import Test.Tasty.HUnit
-import Data.Text (Text)
+import qualified Data.RangeSet as RS
+import           Data.Text (Text)
+import           Test.Tasty
+import           Test.Tasty.HUnit
 
-import Text.Regex.AST
+import           Text.Regex.AST
+import           Text.Regex.CharClass
 
 describe :: TestName -> [TestTree] -> TestTree
 describe = testGroup
@@ -152,11 +154,20 @@ parseTests = describe "parseRegex"
                 , EndLine]])
     ]
   , it "parses perl-style character classes" $ testParses
-    [ ("\\d", Class 'd')
-    , ("\\D", Class 'D')
-    , ("\\d\\s", Concat [Class 'd', Class 's'])
-    , ("\\d+", OneOrMore (Class 'd'))
-    , ("(\\d*)", Group (ZeroOrMore (Class 'd')) Nothing)
+    [ ("\\d", Class perl_d)
+    , ("\\d\\s", Concat [Class perl_d, Class perl_s])
+    , ("\\d+", OneOrMore (Class perl_d))
+    , ("(\\d*)", Group (ZeroOrMore (Class perl_d)) Nothing)
+    ]
+  , it "parses bracketed character classes" $ testParses
+    [ ("[a]", Class (RS.singleton 'a'))
+    , ("[ab]", Class (RS.rangeSet 'a' 'b'))
+    , ("[ac]", Class (RS.union (RS.singleton 'a') (RS.singleton 'c')))
+    , ("[a-d]", Class (RS.rangeSet 'a' 'd'))
+    , ("[a-zA-Z]", Class (RS.union (RS.rangeSet 'a' 'z') (RS.rangeSet 'A' 'Z')))
+    , ("[\\d\\sx]", Class (RS.unions [ perl_d
+                                     , perl_s
+                                     , RS.singleton 'x']))
     ]
   , it "fails to parse bad regexes" $ mapM_ shouldNotParse
     [ "?"
@@ -183,6 +194,13 @@ parseTests = describe "parseRegex"
     , "a{foo}"
     , "\\"
     , "\\x"
+    , "["
+    , "[]"
+    , "[["
+    , "[[]"
+    , "[a-]"
+    , "[a"
+    , "[a]["
     ]
   ]
 
@@ -208,6 +226,9 @@ toTextTests = testGroup "toText"
     , "(?P<a>(?P<bc>)){1,3}"
     , ".{0}"
     , "\\d{5,}"
+    , "[a]"
+    , "[a-z]"
+    , "[ 0-9A-Za-z]"
     ]
   ]
 

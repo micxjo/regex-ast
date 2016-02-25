@@ -19,7 +19,9 @@ import           Data.Text.Lazy.Builder (Builder, singleton, fromText,
                                          toLazyText)
 import qualified Data.Text.Lazy.Builder.Int as Builder.Int
 
-type CharClass = Char
+import           Text.Regex.CharClass (CharClass)
+import qualified Text.Regex.CharClass as CharClass
+
 type GroupName = Text
 
 data Regex = Empty
@@ -96,15 +98,17 @@ anyCharP = char '.' >> pure AnyChar
 anchorP :: Parser Regex
 anchorP = (char '^' >> pure StartLine) <|> (char '$' >> pure EndLine)
 
-perlClassP :: Parser Regex
-perlClassP = Class <$> (char '\\' *> satisfy (inClass "dDsSwWhHvV"))
-
 singleCharP :: Parser Regex
 singleCharP = Literal . T.singleton <$> satisfy notSpecial
 
 repeatUnit :: Parser Regex
 repeatUnit =
-  perlClassP <|> escapeLiteralP <|> singleCharP <|> anyCharP <|> groupP
+  choice [ charClassP
+         , escapeLiteralP
+         , singleCharP
+         , anyCharP
+         , groupP
+         ]
 
 zeroOrOneP :: Parser Regex
 zeroOrOneP = do
@@ -156,6 +160,9 @@ groupP = do
   char ')'
   pure (Group sub name)
 
+charClassP :: Parser Regex
+charClassP = Class <$> CharClass.charClassP
+
 concatP :: Parser Regex
 concatP = do
   parts <- many1' (choice [ anchorP
@@ -163,8 +170,8 @@ concatP = do
                           , zeroOrMoreP
                           , oneOrMoreP
                           , repeatP
+                          , charClassP
                           , anyCharP
-                          , perlClassP
                           , groupP
                           , literalP])
   case parts of
@@ -182,7 +189,7 @@ builder Empty = mempty
 builder (Literal t) = fromText t
 builder AnyChar = singleton '.'
 builder AnyCharNoNL = singleton '.'
-builder (Class c) = singleton '\\' <> singleton c
+builder (Class cc) = CharClass.builder cc
 builder StartLine = singleton '^'
 builder EndLine = singleton '$'
 builder StartText = fromText "\\A"
