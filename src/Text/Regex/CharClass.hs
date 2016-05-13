@@ -14,22 +14,25 @@ module Text.Regex.CharClass
        ) where
 
 import           Control.Applicative ((<|>))
+import           Data.List (foldl')
 
 import           Data.Attoparsec.Text
-import qualified Data.Range as Range
-import           Data.RangeSet
+import           Data.RangeSet.List
 import           Data.Text.Lazy.Builder (Builder)
 import qualified Data.Text.Lazy.Builder as B
 
-type CharClass = RangeSet Char
+type CharClass = RSet Char
+
+unions :: (Enum a, Ord a) => [RSet a] -> RSet a
+unions = foldl' union empty
 
 perl_d :: CharClass
-perl_d = rangeSet '0' '9'
+perl_d = singletonRange ('0', '9')
 
 perl_w :: CharClass
-perl_w = unions [ rangeSet 'a' 'z'
-                , rangeSet 'A' 'Z'
-                , rangeSet '0' '9'
+perl_w = unions [ singletonRange ('a', 'z')
+                , singletonRange ('A', 'Z')
+                , singletonRange ('0', '9')
                 , singleton '_'
                 ]
 
@@ -64,7 +67,7 @@ charRangeP = do
   lo <- satisfy (not . inClass "[]-")
   char '-'
   hi <- satisfy (not . inClass "[]-")
-  pure (rangeSet lo hi)
+  pure (singletonRange (lo, hi))
 
 singleCharP :: Parser CharClass
 singleCharP = singleton <$> satisfy (not . inClass "[]-")
@@ -87,12 +90,12 @@ builder cc
   | cc == perl_h = B.fromText "\\h"
   | cc == perl_v = B.fromText "\\v"
   | otherwise = mconcat [ B.singleton '['
-                        , mconcat (map rangeBuilder (ranges cc))
+                        , mconcat (map rangeBuilder (toRangeList cc))
                         , B.singleton ']'
                         ]
-  where rangeBuilder r
-          | Range.isSingleton r = B.singleton (Range.rangeMin r)
-          | otherwise = mconcat [ B.singleton (Range.rangeMin r)
+  where rangeBuilder (rMin, rMax)
+          | rMin == rMax = B.singleton rMin
+          | otherwise = mconcat [ B.singleton rMin
                                 , B.singleton '-'
-                                , B.singleton (Range.rangeMax r)
+                                , B.singleton rMax
                                 ]

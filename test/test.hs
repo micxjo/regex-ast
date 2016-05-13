@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Either (isLeft)
 
-import qualified Data.RangeSet as RS
+import qualified Data.RangeSet.List as RS
 import           Data.Text (Text)
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -161,13 +161,15 @@ parseTests = describe "parseRegex"
     ]
   , it "parses bracketed character classes" $ testParses
     [ ("[a]", Class (RS.singleton 'a'))
-    , ("[ab]", Class (RS.rangeSet 'a' 'b'))
+    , ("[ab]", Class (RS.singletonRange ('a', 'b')))
     , ("[ac]", Class (RS.union (RS.singleton 'a') (RS.singleton 'c')))
-    , ("[a-d]", Class (RS.rangeSet 'a' 'd'))
-    , ("[a-zA-Z]", Class (RS.union (RS.rangeSet 'a' 'z') (RS.rangeSet 'A' 'Z')))
-    , ("[\\d\\sx]", Class (RS.unions [ perl_d
-                                     , perl_s
-                                     , RS.singleton 'x']))
+    , ("[a-d]", Class (RS.singletonRange ('a', 'd')))
+    , ("[a-zA-Z]", Class (RS.union
+                           (RS.singletonRange ('a', 'z'))
+                           (RS.singletonRange ('A', 'Z'))))
+    , ("[\\d\\sx]", Class (foldl1 RS.union [ perl_d
+                                           , perl_s
+                                           , RS.singleton 'x']))
     ]
   , it "fails to parse bad regexes" $ mapM_ shouldNotParse
     [ "?"
