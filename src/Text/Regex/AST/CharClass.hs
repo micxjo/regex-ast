@@ -1,15 +1,16 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE MultiWayIf #-}
 {-|
-Module          : Text.Regex.CharClass
+Module          : Text.Regex.AST.CharClass
 Copyright       : (c) 2016 Micxjo Funkcio
 License         : BSD3
 Maintainer      : micxjo@fastmail.com
 Stability       : Experimental
 -}
-module Text.Regex.CharClass
+module Text.Regex.AST.CharClass
        ( CharClass
        , perl_d
        , perl_w

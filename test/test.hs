@@ -7,7 +7,7 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 
 import           Text.Regex.AST
-import           Text.Regex.CharClass
+import           Text.Regex.AST.CharClass
 
 describe :: TestName -> [TestTree] -> TestTree
 describe = testGroup

@@ -9,6 +9,7 @@ Stability      : Experimental
 -}
 module Text.Regex.AST
        ( Regex(..)
+       , CharClass
        , parseRegex
        , toText
        ) where
@@ -26,8 +27,8 @@ import           Data.Text.Lazy.Builder (Builder, singleton, fromText,
                                          toLazyText)
 import qualified Data.Text.Lazy.Builder.Int as Builder.Int
 
-import           Text.Regex.CharClass (CharClass)
-import qualified Text.Regex.CharClass as CharClass
+import           Text.Regex.AST.CharClass (CharClass)
+import qualified Text.Regex.AST.CharClass as CharClass
 
 type GroupName = Text
 
