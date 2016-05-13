@@ -19,6 +19,7 @@ library
   build-depends:       base >= 4.7 && < 5
                      , text
                      , attoparsec
+                     , deepseq
                      , range-set-list
   default-language:    Haskell2010
 

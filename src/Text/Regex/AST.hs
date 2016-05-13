@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-|
 Module         : Text.Regex.AST
 Copyright      : (c) 2016 Micxjo Funkcio
@@ -18,7 +19,9 @@ import           Control.Applicative ((<|>))
 import           Control.Monad (guard)
 import           Data.List (intersperse)
 import           Data.Monoid ((<>))
+import           GHC.Generics (Generic)
 
+import           Control.DeepSeq
 import           Data.Attoparsec.Text hiding (take, takeWhile)
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -70,14 +73,9 @@ data Regex
   | Concat ![Regex]
   -- | Match at least one of the sub-expressions.
   | Alternate ![Regex]
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
-instance Monoid Regex where
-  mempty = Empty
-
-  mappend r Empty = r
-  mappend Empty r = r
-  mappend r1 r2 = Concat [r1, r2]
+instance NFData Regex
 
 emptyP :: Parser Regex
 emptyP = pure Empty
