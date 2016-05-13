@@ -2,6 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE MultiWayIf #-}
+{-|
+Module          : Text.Regex.CharClass
+Copyright       : (c) 2016 Micxjo Funkcio
+License         : BSD3
+Maintainer      : micxjo@fastmail.com
+Stability       : Experimental
+-}
 module Text.Regex.CharClass
        ( CharClass
        , perl_d
@@ -21,6 +28,7 @@ import           Data.RangeSet.List
 import           Data.Text.Lazy.Builder (Builder)
 import qualified Data.Text.Lazy.Builder as B
 
+-- | A regex character-class, represented as a set of inclusive character ranges.
 type CharClass = RSet Char
 
 unions :: (Enum a, Ord a) => [RSet a] -> RSet a

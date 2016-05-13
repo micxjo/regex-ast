@@ -1,5 +1,12 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-|
+Module         : Text.Regex.AST
+Copyright      : (c) 2016 Micxjo Funkcio
+License        : BSD3
+Maintainer     : micxjo@fastmail.com
+Stability      : Experimental
+-}
 module Text.Regex.AST
        ( Regex(..)
        , parseRegex
@@ -24,25 +31,45 @@ import qualified Text.Regex.CharClass as CharClass
 
 type GroupName = Text
 
-data Regex = Empty
-           | Literal !Text
-           | AnyChar
-           | AnyCharNoNL
-           | Class !CharClass
-           | StartLine
-           | EndLine
-           | StartText
-           | EndText
-           | WordBoundary
-           | NotWordBoundary
-           | Group Regex (Maybe GroupName)
-           | ZeroOrOne Regex
-           | ZeroOrMore Regex
-           | OneOrMore Regex
-           | Repeat !Regex !Integer !(Maybe Integer)
-           | Concat ![Regex]
-           | Alternate ![Regex]
-           deriving (Eq, Show)
+-- | A regular expression abstract syntax tree.
+data Regex
+  -- | Never match
+  = Empty
+  -- | Match a sequence of one or more literal characters.
+  | Literal !Text
+  -- |Match any character.
+  | AnyChar
+  -- | Match any character, excluding newline.
+  | AnyCharNoNL
+  -- | Match against a character class.
+  | Class !CharClass
+  -- | Match the start of a line or beginning of input.
+  | StartLine
+  -- | Match the end of a line or end of input.
+  | EndLine
+  -- | Match the start of input.
+  | StartText
+  -- | Match the end of input.
+  | EndText
+  -- | Match at a word boundary.
+  | WordBoundary
+  -- | Match a non-boundary position.
+  | NotWordBoundary
+  -- | Match the sub-expression as a group, with an optional name.
+  | Group Regex (Maybe GroupName)
+  -- | Repeat the sub-expression zero or one times.
+  | ZeroOrOne Regex
+  -- | Repeat the sub-expression zero or more times.
+  | ZeroOrMore Regex
+  -- | Repeat the sub-expression one or more times.
+  | OneOrMore Regex
+  -- | Repeat the sub-expression with a lower bound and optional upper bound.
+  | Repeat !Regex !Integer !(Maybe Integer)
+  -- | Match the sub-expressions one after another.
+  | Concat ![Regex]
+  -- | Match at least one of the sub-expressions.
+  | Alternate ![Regex]
+  deriving (Eq, Show)
 
 instance Monoid Regex where
   mempty = Empty
