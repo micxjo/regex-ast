@@ -61,12 +61,6 @@ data Regex
   | NotWordBoundary
   -- | Match the sub-expression as a group, with an optional name.
   | Group Regex (Maybe GroupName)
-  -- | Repeat the sub-expression zero or one times.
-  | ZeroOrOne Regex
-  -- | Repeat the sub-expression zero or more times.
-  | ZeroOrMore Regex
-  -- | Repeat the sub-expression one or more times.
-  | OneOrMore Regex
   -- | Repeat the sub-expression with a lower bound and optional upper bound.
   | Repeat !Regex !Integer !(Maybe Integer)
   -- | Match the sub-expressions one after another.
@@ -140,19 +134,19 @@ zeroOrOneP :: Parser Regex
 zeroOrOneP = do
   sub <- repeatUnit
   char '?'
-  pure (ZeroOrOne sub)
+  pure (Repeat sub 0 (Just 1))
 
 zeroOrMoreP :: Parser Regex
 zeroOrMoreP = do
   sub <- repeatUnit
   char '*'
-  pure (ZeroOrMore sub)
+  pure (Repeat sub 0 Nothing)
 
 oneOrMoreP :: Parser Regex
 oneOrMoreP = do
   sub <- repeatUnit
   char '+'
-  pure (OneOrMore sub)
+  pure (Repeat sub 1 Nothing)
 
 repeatP :: Parser Regex
 repeatP = do
@@ -226,9 +220,9 @@ builder (Group sub Nothing) =
   singleton '(' <> builder sub <> singleton ')'
 builder (Group sub (Just n)) =
   fromText "(?P<" <> fromText n <> singleton '>' <> builder sub <> singleton ')'
-builder (ZeroOrOne sub) = builder sub <> singleton '?'
-builder (ZeroOrMore sub) = builder sub <> singleton '*'
-builder (OneOrMore sub) = builder sub <> singleton '+'
+builder (Repeat sub 0 (Just 1)) = builder sub <> singleton '?'
+builder (Repeat sub 0 Nothing) = builder sub <> singleton '*'
+builder (Repeat sub 1 Nothing) = builder sub <> singleton '+'
 builder (Repeat sub lo Nothing) =
   builder sub <> singleton '{' <> Builder.Int.decimal lo <> fromText ",}"
 builder (Repeat sub lo (Just hi))

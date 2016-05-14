@@ -24,6 +24,15 @@ shouldNotParse text = isLeft (parseRegex text) @?= True
 testParses :: [(Text, Regex)] -> Assertion
 testParses = mapM_ (uncurry shouldParseTo)
 
+zeroOrOne :: Regex -> Regex
+zeroOrOne r = Repeat r 0 (Just 1)
+
+zeroOrMore :: Regex -> Regex
+zeroOrMore r = Repeat r 0 Nothing
+
+oneOrMore :: Regex -> Regex
+oneOrMore r = Repeat r 1 Nothing
+
 parseTests :: TestTree
 parseTests = describe "parseRegex"
   [ it "parses an empty regex" $
@@ -66,8 +75,8 @@ parseTests = describe "parseRegex"
        Group (Alternate
               [ Literal "foo"
               , Concat [ Literal "b"
-                       , ZeroOrOne (Literal "a")
-                       , ZeroOrOne (Literal "r")]
+                       , zeroOrOne (Literal "a")
+                       , zeroOrOne (Literal "r")]
               , Literal "baz"])
        Nothing)
     ]
@@ -90,7 +99,7 @@ parseTests = describe "parseRegex"
     , ("(foo(bar)?baz)",
        Group (Concat
               [ Literal "foo"
-              , ZeroOrOne (Group (Literal "bar") Nothing)
+              , zeroOrOne (Group (Literal "bar") Nothing)
               , Literal "baz"])
        Nothing)
     ]
@@ -103,28 +112,28 @@ parseTests = describe "parseRegex"
     , ("(?P<foo>())", Group (Group Empty Nothing) (Just "foo"))
     ]
   , it "parses zero-or-one" $ testParses
-    [ ("a?", ZeroOrOne (Literal "a"))
-    , ("a?b?", Concat [ZeroOrOne (Literal "a"), ZeroOrOne (Literal "b")])
-    , ("(abc)?", ZeroOrOne (Group (Literal "abc") Nothing))
+    [ ("a?", zeroOrOne (Literal "a"))
+    , ("a?b?", Concat [zeroOrOne (Literal "a"), zeroOrOne (Literal "b")])
+    , ("(abc)?", zeroOrOne (Group (Literal "abc") Nothing))
     , ("(a|b)?",
-       ZeroOrOne (Group (Alternate [Literal "a", Literal "b"]) Nothing))
-    , (".?", ZeroOrOne AnyChar)
+       zeroOrOne (Group (Alternate [Literal "a", Literal "b"]) Nothing))
+    , (".?", zeroOrOne AnyChar)
     ]
   , it "parses zero-or-more" $ testParses
-    [ ("a*", ZeroOrMore (Literal "a"))
-    , ("a*b*", Concat [ZeroOrMore (Literal "a"), ZeroOrMore (Literal "b")])
-    , ("(abc)*", ZeroOrMore (Group (Literal "abc") Nothing))
+    [ ("a*", zeroOrMore (Literal "a"))
+    , ("a*b*", Concat [zeroOrMore (Literal "a"), zeroOrMore (Literal "b")])
+    , ("(abc)*", zeroOrMore (Group (Literal "abc") Nothing))
     , ("(a|b)*",
-       ZeroOrMore (Group (Alternate [Literal "a", Literal "b"]) Nothing))
-    , (".*", ZeroOrMore AnyChar)
+       zeroOrMore (Group (Alternate [Literal "a", Literal "b"]) Nothing))
+    , (".*", zeroOrMore AnyChar)
     ]
   , it "parses one-or-more" $ testParses
-    [ ("a+", OneOrMore (Literal "a"))
-    , ("a+b+", Concat [OneOrMore (Literal "a"), OneOrMore (Literal "b")])
-    , ("(abc)+", OneOrMore (Group (Literal "abc") Nothing))
+    [ ("a+", oneOrMore (Literal "a"))
+    , ("a+b+", Concat [oneOrMore (Literal "a"), oneOrMore (Literal "b")])
+    , ("(abc)+", oneOrMore (Group (Literal "abc") Nothing))
     , ("(a|b)+",
-       OneOrMore (Group (Alternate [Literal "a", Literal "b"]) Nothing))
-    , (".+", OneOrMore AnyChar)
+       oneOrMore (Group (Alternate [Literal "a", Literal "b"]) Nothing))
+    , (".+", oneOrMore AnyChar)
     ]
   , it "parses repeats" $ testParses
     [ ("a{4,10}", Repeat (Literal "a") 4 (Just 10))
@@ -156,8 +165,8 @@ parseTests = describe "parseRegex"
   , it "parses perl-style character classes" $ testParses
     [ ("\\d", Class perl_d)
     , ("\\d\\s", Concat [Class perl_d, Class perl_s])
-    , ("\\d+", OneOrMore (Class perl_d))
-    , ("(\\d*)", Group (ZeroOrMore (Class perl_d)) Nothing)
+    , ("\\d+", oneOrMore (Class perl_d))
+    , ("(\\d*)", Group (zeroOrMore (Class perl_d)) Nothing)
     ]
   , it "parses bracketed character classes" $ testParses
     [ ("[a]", Class (RS.singleton 'a'))
