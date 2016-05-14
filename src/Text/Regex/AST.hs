@@ -43,8 +43,6 @@ data Regex
   | Literal !Text
   -- |Match any character.
   | AnyChar
-  -- | Match any character, excluding newline.
-  | AnyCharNoNL
   -- | Match against a character class.
   | Class !CharClass
   -- | Match the start of a line or beginning of input.
@@ -208,7 +206,6 @@ builder :: Regex -> Builder
 builder Empty = mempty
 builder (Literal t) = fromText t
 builder AnyChar = singleton '.'
-builder AnyCharNoNL = singleton '.'
 builder (Class cc) = CharClass.builder cc
 builder StartLine = singleton '^'
 builder EndLine = singleton '$'
