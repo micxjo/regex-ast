@@ -163,8 +163,12 @@ parseTests = describe "parseRegex"
                 , EndLine]])
     ]
   , it "parses perl-style character classes" $ testParses
-    [ ("\\d", Class perl_d)
-    , ("\\d\\s", Concat [Class perl_d, Class perl_s])
+    [ ("\\d\\w\\s\\h\\v", Concat [ Class perl_d
+                                 , Class perl_w
+                                 , Class perl_s
+                                 , Class perl_h
+                                 , Class perl_v
+                                 ])
     , ("\\d+", oneOrMore (Class perl_d))
     , ("(\\d*)", Group (zeroOrMore (Class perl_d)) Nothing)
     ]
