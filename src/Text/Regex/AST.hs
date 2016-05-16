@@ -11,6 +11,7 @@ Stability      : Experimental
 module Text.Regex.AST
        ( Regex(..)
        , CharClass
+       , GroupName
        , parseRegex
        , toText
        ) where
