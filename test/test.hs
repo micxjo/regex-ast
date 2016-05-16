@@ -169,6 +169,12 @@ parseTests = describe "parseRegex"
                                  , Class perl_h
                                  , Class perl_v
                                  ])
+    , ("\\D\\W\\S\\H\\V", Concat [ Class perl_D
+                                 , Class perl_W
+                                 , Class perl_S
+                                 , Class perl_H
+                                 , Class perl_V
+                                 ])
     , ("\\d+", oneOrMore (Class perl_d))
     , ("(\\d*)", Group (zeroOrMore (Class perl_d)) Nothing)
     ]
@@ -244,6 +250,7 @@ toTextTests = testGroup "toText"
     , "[a]"
     , "[a-z]"
     , "[ 0-9A-Za-z]"
+    , "\\d\\D"
     ]
   ]
 
