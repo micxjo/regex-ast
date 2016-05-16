@@ -59,7 +59,7 @@ data Regex
   -- | Match a non-boundary position.
   | NotWordBoundary
   -- | Match the sub-expression as a group, with an optional name.
-  | Group Regex (Maybe GroupName)
+  | Group !Regex !(Maybe GroupName)
   -- | Repeat the sub-expression with a lower bound and optional upper bound.
   | Repeat !Regex !Integer !(Maybe Integer)
   -- | Match the sub-expressions one after another.
