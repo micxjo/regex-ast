@@ -162,6 +162,8 @@ parseTests = describe "parseRegex"
        , Concat [ Group (Literal "bar") Nothing
                 , EndLine]])
     ]
+  , it "parses word boundaries" $ testParses
+    [ ("\\b\\B", Concat [ WordBoundary, NotWordBoundary ]) ]
   , it "parses perl-style character classes" $ testParses
     [ ("\\d\\w\\s\\h\\v", Concat [ Class perl_d
                                  , Class perl_w

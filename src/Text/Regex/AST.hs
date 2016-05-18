@@ -87,6 +87,11 @@ literalCharP = do
   guard (notRepeater next)
   pure (singleton c)
 
+boundaryP :: Parser Regex
+boundaryP = do
+  char '\\'
+  (char 'b' *> pure WordBoundary) <|> (char 'B' *> pure NotWordBoundary)
+
 isEscapeChar :: Char -> Bool
 isEscapeChar = inClass "\\aftnrv.*+?^$()[]{}|"
 
@@ -123,6 +128,7 @@ singleCharP = Literal . T.singleton <$> satisfy notSpecial
 repeatUnit :: Parser Regex
 repeatUnit =
   choice [ charClassP
+         , boundaryP
          , escapeLiteralP
          , singleCharP
          , anyCharP
@@ -190,6 +196,7 @@ concatP = do
                           , oneOrMoreP
                           , repeatP
                           , charClassP
+                          , boundaryP
                           , anyCharP
                           , groupP
                           , literalP])
